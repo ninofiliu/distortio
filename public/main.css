@@ -8,17 +8,14 @@ a {
 a:hover {
   color: red;
 }
-img {
-  position: fixed;
-  top: 0;
-  width: 100vw;
-  left: 0;
-  height: 100vh;
-  object-fit: cover;
-}
 .input {
   position: fixed;
   inset: 0 0 0 0;
   padding: 1em;
   box-sizing: border-box;
+  text-shadow: 0 0 .5em white;
+}
+.preview {
+  max-width: 20vw;
+  max-height: 20vh;
 }
