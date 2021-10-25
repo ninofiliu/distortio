@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import MediaInput from './MediaInput';
+import Output from './Output';
 import { Media } from './types';
 
 export default () => {
@@ -8,6 +9,7 @@ export default () => {
 
   return (
     <div className="app">
+      <Output srcMedia={srcMedia} dstMedia={dstMedia} />
       <div className="input">
         <h1>Distortio</h1>
         <h2>I want this...</h2>

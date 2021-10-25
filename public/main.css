@@ -8,6 +8,14 @@ a {
 a:hover {
   color: red;
 }
+body {
+  margin: 0;
+  overflow: hidden;
+}
+canvas {
+  display: fixed;
+  inset: 0 0 0 0;
+}
 .input {
   position: fixed;
   inset: 0 0 0 0;
