@@ -19,4 +19,7 @@ rules:
     - extensions:
       - .tsx
   no-use-before-define: off
-  @typescript-eslint/no-use-before-define: error
+  '@typescript-eslint/no-use-before-define': error
+  import/no-unresolved: off
+  import/extensions: off
+  react/jsx-one-expression-per-line: off
