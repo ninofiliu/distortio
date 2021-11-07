@@ -9,7 +9,7 @@ export default () => {
 
   return (
     <div className="app">
-      <Output />
+      <Output srcMedia={srcMedia} dstMedia={dstMedia} />
       <div className="input">
         <h1>Distortio</h1>
         <h2>I want this...</h2>
