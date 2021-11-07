@@ -29,3 +29,4 @@ rules:
   jsx-a11y/alt-text: off
   no-restricted-syntax: off
   default-case: off
+  max-len: off

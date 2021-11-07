@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import fragment from './fragment.glsl';
-import { Media } from './types';
+import { Source } from './types';
 import vertex from './vertex.glsl';
-
-type Source = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
 
 const createShader = (gl: WebGL2RenderingContext, type: number, source: string) => {
   const shader = gl.createShader(type);
@@ -61,10 +59,10 @@ const setTextureImage = (gl: WebGL2RenderingContext, nb: number, source: Source)
 };
 
 let gl: WebGL2RenderingContext;
-let srcSource: Source;
-let dstSource: Source;
+let sharedSrcSource: Source;
+let sharedDstSource: Source;
 
-export default ({ srcMedia, dstMedia }: { srcMedia: Media; dstMedia: Media; }) => {
+export default ({ srcSource, dstSource }: { srcSource: Source; dstSource: Source; }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -80,47 +78,19 @@ export default ({ srcMedia, dstMedia }: { srcMedia: Media; dstMedia: Media; }) =
     setupPositions(gl, program);
 
     addTexture(gl, 0, gl.getUniformLocation(program, 'u_src'));
+    addTexture(gl, 1, gl.getUniformLocation(program, 'u_dst'));
 
     const loop = () => {
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      if (srcSource) setTextureImage(gl, 0, srcSource);
+      if (sharedSrcSource) setTextureImage(gl, 0, sharedSrcSource);
+      if (sharedDstSource) setTextureImage(gl, 0, sharedDstSource);
       requestAnimationFrame(loop);
     };
     loop();
   }, []);
 
-  useEffect(() => {
-    if (!srcMedia) return;
-    switch (srcMedia.kind) {
-      case 'image': {
-        const img = document.createElement('img');
-        img.src = srcMedia.href;
-        img.onload = () => {
-          srcSource = img;
-        };
-        break;
-      }
-      case 'video': {
-        const video = document.createElement('video');
-        video.muted = true;
-        video.loop = true;
-        video.src = srcMedia.href;
-        video.oncanplay = () => {
-          video.play();
-          srcSource = video;
-        };
-        break;
-      }
-      case 'stream': {
-        const video = document.createElement('video');
-        video.srcObject = srcMedia.stream;
-        video.muted = true;
-        video.play();
-        srcSource = video;
-        break;
-      }
-    }
-  }, [srcMedia]);
+  useEffect(() => { sharedSrcSource = srcSource; }, [srcSource]);
+  useEffect(() => { sharedDstSource = dstSource; }, [dstSource]);
 
   return <canvas ref={canvasRef} />;
 };

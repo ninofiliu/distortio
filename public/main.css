@@ -1,6 +1,6 @@
 :root {
-  font-family: Arial, Helvetica, sans-serif;
-  font-style: italic;
+  font-family: monospace;
+  color: white;
 }
 a {
   color: grey;
@@ -21,7 +21,6 @@ canvas {
   inset: 0 0 0 0;
   padding: 1em;
   box-sizing: border-box;
-  text-shadow: 0 0 .5em white;
 }
 .preview {
   max-width: 20vw;
