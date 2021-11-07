@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import fragment from './fragment.glsl';
+import vertex from './vertex.glsl';
 
-const createShader = async (gl: WebGL2RenderingContext, type: number, url: string) => {
-  const resp = await fetch(url);
-  const source = await resp.text();
+const createShader = (gl: WebGL2RenderingContext, type: number, source: string) => {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
@@ -12,9 +12,9 @@ const createShader = async (gl: WebGL2RenderingContext, type: number, url: strin
   return shader;
 };
 
-const createProgram = async (gl: WebGL2RenderingContext) => {
-  const vertexShader = await createShader(gl, gl.VERTEX_SHADER, new URL('./vertex.glsl', import.meta.url).href);
-  const fragmentShader = await createShader(gl, gl.FRAGMENT_SHADER, new URL('./fragment.glsl', import.meta.url).href);
+const createProgram = (gl: WebGL2RenderingContext) => {
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertex);
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragment);
 
   const program = gl.createProgram();
   gl.attachShader(program, vertexShader);
@@ -30,7 +30,7 @@ const createProgram = async (gl: WebGL2RenderingContext) => {
 export default () => {
   const canvasRef = useRef(null);
 
-  useEffect(async () => {
+  useEffect(() => {
     const canvas = canvasRef.current as HTMLCanvasElement;
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -39,7 +39,7 @@ export default () => {
     canvas.height = height;
 
     const gl = canvas.getContext('webgl2');
-    const program = await createProgram(gl);
+    const program = createProgram(gl);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
