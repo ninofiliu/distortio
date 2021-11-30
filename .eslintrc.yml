@@ -31,3 +31,5 @@ rules:
   default-case: off
   max-len: off
   no-mixed-operators: off
+  jsx-a11y/label-has-associated-control: off
+  object-curly-newline: off

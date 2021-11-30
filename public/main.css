@@ -12,15 +12,47 @@ body {
   margin: 0;
   overflow: hidden;
 }
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background-color: transparent;
+  margin: 0;
+  padding: 0;
+}
+button::before {
+  content: '[';
+}
+button::after {
+  content: ']';
+}
+button:disabled {
+  color: grey;
+}
+button:not(:disabled):hover {
+  color: red;
+  cursor: pointer;
+}
 canvas {
   display: fixed;
   inset: 0 0 0 0;
+}
+input {
+  font: inherit;
+  font-size: 1rem;
+}
+input[type="file"] {
+  display: none;
 }
 .input {
   position: fixed;
   inset: 0 0 0 0;
   padding: 1em;
   box-sizing: border-box;
+}
+.input-label:hover {
+  color: red;
+  cursor: pointer;
 }
 .preview {
   max-width: 20vw;

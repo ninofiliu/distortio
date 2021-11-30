@@ -1,23 +1,24 @@
-import React, { useState, useRef } from 'react';
-
-import { Source } from './types';
+import React, { useState, useRef, Dispatch, SetStateAction } from 'react';
+import { Input } from './types';
 
 type Media =
   | { kind: 'image'; href: string; }
   | { kind: 'stream'; }
 
-export default ({ onSource }: { onSource: (source: Source) => any }) => {
+export default ({ input, setInput }: { input: Input; setInput: Dispatch<SetStateAction<Input>>; }) => {
   const streamVideo = useRef<HTMLVideoElement>(null);
   const [media, setMedia] = useState<Media>(null);
+  const [fileName, setFileName] = useState<string>('');
 
   const onUpload = (evt: any) => {
     const file = evt.target.files[0] as File;
+    setFileName(file.name);
     const href = URL.createObjectURL(file);
     setMedia({ kind: 'image', href });
     const img = document.createElement('img');
     img.src = href;
     img.onload = () => {
-      onSource(img);
+      setInput({ ...input, source: img });
     };
   };
 
@@ -25,7 +26,7 @@ export default ({ onSource }: { onSource: (source: Source) => any }) => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     setMedia({ kind: 'stream' });
     streamVideo.current.srcObject = stream;
-    onSource(streamVideo.current);
+    setInput({ ...input, source: streamVideo.current });
   };
 
   return (
@@ -36,13 +37,34 @@ export default ({ onSource }: { onSource: (source: Source) => any }) => {
 
       <div>
         Image upload:&nbsp;
-        <input
-          type="file"
-          accept="image/*"
-          onInput={onUpload}
-        />
+        <label className="input-label">
+          {(fileName && media?.kind === 'image')
+            ? <>{fileName} [Chose another]</>
+            : <>[Browse]</>}
+          <input
+            type="file"
+            accept="image/*"
+            onInput={onUpload}
+          />
+        </label>
       </div>
       <div>Webcam: <button onClick={capture} type="button">capture</button></div>
+      <div>
+        <button
+          type="button"
+          onClick={() => setInput({ ...input, cover: true })}
+          disabled={input.cover}
+        >
+          Cover
+        </button>&nbsp;
+        <button
+          type="button"
+          onClick={() => setInput({ ...input, cover: false })}
+          disabled={!input.cover}
+        >
+          Fill
+        </button>
+      </div>
     </>
   );
 };

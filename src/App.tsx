@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
 import MediaInput from './MediaInput';
 import Output from './Output';
-import { Source } from './types';
+import { Input } from './types';
 
 export default () => {
-  const [srcSource, setSrcSource] = useState<Source>(null);
-  const [dstSource, setDstSource] = useState<Source>(null);
+  const [srcInput, setSrcInput] = useState<Input>({
+    cover: true,
+    source: null,
+  });
+  const [dstInput, setDstInput] = useState<Input>({
+    cover: true,
+    source: null,
+  });
 
   return (
     <div className="app">
-      <Output srcSource={srcSource} dstSource={dstSource} />
+      <Output srcSource={srcInput.source} dstSource={dstInput.source} />
       <div className="input">
         <h1>Distortio</h1>
         <h2>I want this...</h2>
-        <MediaInput onSource={(source) => setSrcSource(source)} />
+        <MediaInput input={srcInput} setInput={setSrcInput} />
         <h2>to be distorted by this...</h2>
-        <MediaInput onSource={(source) => setDstSource(source)} />
+        <MediaInput input={dstInput} setInput={setDstInput} />
       </div>
     </div>
   );
