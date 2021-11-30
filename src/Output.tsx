@@ -58,9 +58,21 @@ const setTextureImage = (gl: WebGL2RenderingContext, nb: number, source: Source)
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
 };
 
-let gl: WebGL2RenderingContext;
-let sharedSrcSource: Source;
-let sharedDstSource: Source;
+type State = {
+  src: Input;
+  dst: Input;
+}
+
+const state: State = {
+  src: {
+    source: null,
+    cover: true,
+  },
+  dst: {
+    source: null,
+    cover: true,
+  },
+};
 
 const mouse = { x: 0, y: 0 };
 document.addEventListener('mousemove', (evt) => {
@@ -77,37 +89,35 @@ document.addEventListener('wheel', (evt) => {
   wheel.y += evt.deltaY;
 });
 
+const canvas = document.createElement('canvas');
+const width = window.innerWidth;
+const height = window.innerHeight;
+
+canvas.width = width;
+canvas.height = height;
+
+const gl = canvas.getContext('webgl2');
+const program = createProgram(gl);
+setupPositions(gl, program);
+
+addTexture(gl, 0, gl.getUniformLocation(program, 'u_src'));
+addTexture(gl, 1, gl.getUniformLocation(program, 'u_dst'));
+
+const loop = () => {
+  if (state.src.source) setTextureImage(gl, 0, state.src.source);
+  if (state.dst.source) setTextureImage(gl, 1, state.dst.source);
+  gl.uniform2f(gl.getUniformLocation(program, 'u_mouse'), mouse.x, mouse.y);
+  gl.uniform2f(gl.getUniformLocation(program, 'u_wheel'), wheel.x, wheel.y);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimationFrame(loop);
+};
+loop();
+
 export default ({ srcInput, dstInput }: { srcInput: Input; dstInput: Input; }) => {
-  const canvasRef = useRef(null);
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => { root.current.append(canvas); }, []);
+  useEffect(() => { state.src.source = srcInput.source; }, [srcInput.source]);
+  useEffect(() => { state.dst.source = dstInput.source; }, [dstInput.source]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current as HTMLCanvasElement;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    gl = canvas.getContext('webgl2');
-    const program = createProgram(gl);
-    setupPositions(gl, program);
-
-    addTexture(gl, 0, gl.getUniformLocation(program, 'u_src'));
-    addTexture(gl, 1, gl.getUniformLocation(program, 'u_dst'));
-
-    const loop = () => {
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      if (sharedSrcSource) setTextureImage(gl, 0, sharedSrcSource);
-      if (sharedDstSource) setTextureImage(gl, 1, sharedDstSource);
-      gl.uniform2f(gl.getUniformLocation(program, 'u_mouse'), mouse.x, mouse.y);
-      gl.uniform2f(gl.getUniformLocation(program, 'u_wheel'), wheel.x, wheel.y);
-      requestAnimationFrame(loop);
-    };
-    loop();
-  }, []);
-
-  useEffect(() => { sharedSrcSource = srcInput.source; }, [srcInput.source]);
-  useEffect(() => { sharedDstSource = dstInput.source; }, [dstInput.source]);
-
-  return <canvas ref={canvasRef} />;
+  return <div ref={root} />;
 };
