@@ -83,16 +83,6 @@ const state: State = {
   wheel: { x: 0, y: 0 },
 };
 
-document.addEventListener('mousemove', (evt) => {
-  state.mouse.x = -1 + 2 * evt.pageX / window.innerWidth;
-  state.mouse.y = 1 - 2 * evt.pageY / window.innerHeight;
-});
-
-document.addEventListener('wheel', (evt) => {
-  state.wheel.x += evt.deltaX;
-  state.wheel.y += evt.deltaY;
-});
-
 const canvas = document.createElement('canvas');
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -100,7 +90,7 @@ const height = window.innerHeight;
 canvas.width = width;
 canvas.height = height;
 
-const gl = canvas.getContext('webgl2');
+const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
 const program = createProgram(gl);
 setupPositions(gl, program);
 
@@ -117,6 +107,49 @@ const loop = () => {
   requestAnimationFrame(loop);
 };
 loop();
+
+const recorder = new MediaRecorder(canvas.captureStream());
+recorder.addEventListener('dataavailable', (evt) => {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(evt.data);
+  link.download = 'distortio.png';
+  link.click();
+});
+
+document.addEventListener('keypress', (evt) => {
+  switch (evt.key) {
+    case 'd': {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL();
+      link.download = 'distortio.png';
+      link.click();
+      break;
+    }
+    case 'r': {
+      switch (recorder.state) {
+        case 'inactive': {
+          recorder.start();
+          break;
+        }
+        case 'recording': {
+          recorder.stop();
+          break;
+        }
+      }
+      break;
+    }
+  }
+});
+
+document.addEventListener('mousemove', (evt) => {
+  state.mouse.x = -1 + 2 * evt.pageX / window.innerWidth;
+  state.mouse.y = 1 - 2 * evt.pageY / window.innerHeight;
+});
+
+document.addEventListener('wheel', (evt) => {
+  state.wheel.x += evt.deltaX;
+  state.wheel.y += evt.deltaY;
+});
 
 export default ({ srcInput, dstInput }: { srcInput: Input; dstInput: Input; }) => {
   const root = useRef<HTMLDivElement>(null);
