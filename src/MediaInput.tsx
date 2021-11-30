@@ -50,7 +50,7 @@ export default ({ input, setInput }: { input: Input; setInput: Dispatch<SetState
           />
         </label>
       </div>
-      <div>Webcam: <button onClick={capture} type="button">capture</button></div>
+      <div>Webcam: <button onClick={capture} type="button">Capture</button></div>
       <div>
         <button
           type="button"
