@@ -62,6 +62,21 @@ let gl: WebGL2RenderingContext;
 let sharedSrcSource: Source;
 let sharedDstSource: Source;
 
+const mouse = { x: 0, y: 0 };
+document.addEventListener('mousemove', (evt) => {
+  mouse.x = -1 + 2 * evt.pageX / window.innerWidth;
+  mouse.y = 1 - 2 * evt.pageY / window.innerHeight;
+});
+
+const wheel = {
+  x: 0,
+  y: 500,
+};
+document.addEventListener('wheel', (evt) => {
+  wheel.x += evt.deltaX;
+  wheel.y += evt.deltaY;
+});
+
 export default ({ srcSource, dstSource }: { srcSource: Source; dstSource: Source; }) => {
   const canvasRef = useRef(null);
 
@@ -83,7 +98,9 @@ export default ({ srcSource, dstSource }: { srcSource: Source; dstSource: Source
     const loop = () => {
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       if (sharedSrcSource) setTextureImage(gl, 0, sharedSrcSource);
-      if (sharedDstSource) setTextureImage(gl, 0, sharedDstSource);
+      if (sharedDstSource) setTextureImage(gl, 1, sharedDstSource);
+      gl.uniform2f(gl.getUniformLocation(program, 'u_mouse'), mouse.x, mouse.y);
+      gl.uniform2f(gl.getUniformLocation(program, 'u_wheel'), wheel.x, wheel.y);
       requestAnimationFrame(loop);
     };
     loop();
