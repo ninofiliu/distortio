@@ -58,9 +58,16 @@ const setTextureImage = (gl: WebGL2RenderingContext, nb: number, source: Source)
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
 };
 
+type Point = {
+  x: number;
+  y: number;
+}
+
 type State = {
   src: Input;
   dst: Input;
+  mouse: Point;
+  wheel: Point;
 }
 
 const state: State = {
@@ -72,21 +79,18 @@ const state: State = {
     source: null,
     cover: true,
   },
+  mouse: { x: 0, y: 0 },
+  wheel: { x: 0, y: 0 },
 };
 
-const mouse = { x: 0, y: 0 };
 document.addEventListener('mousemove', (evt) => {
-  mouse.x = -1 + 2 * evt.pageX / window.innerWidth;
-  mouse.y = 1 - 2 * evt.pageY / window.innerHeight;
+  state.mouse.x = -1 + 2 * evt.pageX / window.innerWidth;
+  state.mouse.y = 1 - 2 * evt.pageY / window.innerHeight;
 });
 
-const wheel = {
-  x: 0,
-  y: 500,
-};
 document.addEventListener('wheel', (evt) => {
-  wheel.x += evt.deltaX;
-  wheel.y += evt.deltaY;
+  state.wheel.x += evt.deltaX;
+  state.wheel.y += evt.deltaY;
 });
 
 const canvas = document.createElement('canvas');
@@ -100,14 +104,15 @@ const gl = canvas.getContext('webgl2');
 const program = createProgram(gl);
 setupPositions(gl, program);
 
-addTexture(gl, 0, gl.getUniformLocation(program, 'u_src'));
-addTexture(gl, 1, gl.getUniformLocation(program, 'u_dst'));
+addTexture(gl, 0, gl.getUniformLocation(program, 'src_img'));
+addTexture(gl, 1, gl.getUniformLocation(program, 'dst_img'));
+gl.uniform2f(gl.getUniformLocation(program, 'size'), width, height);
 
 const loop = () => {
-  if (state.src.source) setTextureImage(gl, 0, state.src.source);
-  if (state.dst.source) setTextureImage(gl, 1, state.dst.source);
-  gl.uniform2f(gl.getUniformLocation(program, 'u_mouse'), mouse.x, mouse.y);
-  gl.uniform2f(gl.getUniformLocation(program, 'u_wheel'), wheel.x, wheel.y);
+  if (state.src.source && state.src.source instanceof HTMLVideoElement) setTextureImage(gl, 0, state.src.source);
+  if (state.dst.source && state.dst.source instanceof HTMLVideoElement) setTextureImage(gl, 1, state.dst.source);
+  gl.uniform2f(gl.getUniformLocation(program, 'mouse'), state.mouse.x, state.mouse.y);
+  gl.uniform2f(gl.getUniformLocation(program, 'wheel'), state.wheel.x, state.wheel.y);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   requestAnimationFrame(loop);
 };
@@ -115,9 +120,36 @@ loop();
 
 export default ({ srcInput, dstInput }: { srcInput: Input; dstInput: Input; }) => {
   const root = useRef<HTMLDivElement>(null);
-  useEffect(() => { root.current.append(canvas); }, []);
-  useEffect(() => { state.src.source = srcInput.source; }, [srcInput.source]);
-  useEffect(() => { state.dst.source = dstInput.source; }, [dstInput.source]);
-
+  useEffect(() => {
+    root.current.append(canvas);
+  }, []);
+  useEffect(() => {
+    state.src.source = srcInput.source;
+    if (state.src.source instanceof HTMLImageElement) {
+      setTextureImage(gl, 0, state.src.source);
+      gl.uniform2f(gl.getUniformLocation(program, 'src_size'), state.src.source.width, state.src.source.height);
+    }
+    if (state.src.source instanceof HTMLVideoElement) {
+      gl.uniform2f(gl.getUniformLocation(program, 'src_size'), state.src.source.videoWidth, state.src.source.videoHeight);
+    }
+  }, [srcInput.source]);
+  useEffect(() => {
+    state.dst.source = dstInput.source;
+    if (state.dst.source instanceof HTMLImageElement) {
+      setTextureImage(gl, 1, state.dst.source);
+      gl.uniform2f(gl.getUniformLocation(program, 'dst_size'), state.dst.source.width, state.dst.source.height);
+    }
+    if (state.dst.source instanceof HTMLVideoElement) {
+      gl.uniform2f(gl.getUniformLocation(program, 'dst_size'), state.dst.source.videoWidth, state.dst.source.videoHeight);
+    }
+  }, [dstInput.source]);
+  useEffect(() => {
+    state.src.cover = srcInput.cover;
+    gl.uniform1i(gl.getUniformLocation(program, 'src_cover'), state.src.cover ? 1 : 0);
+  }, [srcInput.cover]);
+  useEffect(() => {
+    state.dst.cover = dstInput.cover;
+    gl.uniform1i(gl.getUniformLocation(program, 'dst_cover'), state.dst.cover ? 1 : 0);
+  }, [dstInput.cover]);
   return <div ref={root} />;
 };

@@ -26,7 +26,9 @@ export default ({ input, setInput }: { input: Input; setInput: Dispatch<SetState
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     setMedia({ kind: 'stream' });
     streamVideo.current.srcObject = stream;
-    setInput({ ...input, source: streamVideo.current });
+    streamVideo.current.oncanplay = () => {
+      setInput({ ...input, source: streamVideo.current });
+    };
   };
 
   return (
