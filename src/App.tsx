@@ -15,7 +15,7 @@ export default () => {
 
   return (
     <div className="app">
-      <Output srcSource={srcInput.source} dstSource={dstInput.source} />
+      <Output srcInput={srcInput} dstInput={dstInput} />
       <div className="input">
         <h1>Distortio</h1>
         <h2>I want this...</h2>

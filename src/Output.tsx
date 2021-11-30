@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import fragment from './fragment.glsl';
-import { Source } from './types';
+import { Input, Source } from './types';
 import vertex from './vertex.glsl';
 
 const createShader = (gl: WebGL2RenderingContext, type: number, source: string) => {
@@ -77,7 +77,7 @@ document.addEventListener('wheel', (evt) => {
   wheel.y += evt.deltaY;
 });
 
-export default ({ srcSource, dstSource }: { srcSource: Source; dstSource: Source; }) => {
+export default ({ srcInput, dstInput }: { srcInput: Input; dstInput: Input; }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -106,8 +106,8 @@ export default ({ srcSource, dstSource }: { srcSource: Source; dstSource: Source
     loop();
   }, []);
 
-  useEffect(() => { sharedSrcSource = srcSource; }, [srcSource]);
-  useEffect(() => { sharedDstSource = dstSource; }, [dstSource]);
+  useEffect(() => { sharedSrcSource = srcInput.source; }, [srcInput.source]);
+  useEffect(() => { sharedDstSource = dstInput.source; }, [dstInput.source]);
 
   return <canvas ref={canvasRef} />;
 };
