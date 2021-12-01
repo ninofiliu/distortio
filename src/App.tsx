@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import MediaInput from './MediaInput';
 import Output from './Output';
 import { Input } from './types';
@@ -21,7 +21,7 @@ export default () => {
     cover: true,
     source: null,
   });
-  const [recording, setRecording] = useState<boolean>(false);
+  const [stopwatch, setStopwatch] = useState<number>(null);
 
   const download = () => {
     const link = document.createElement('a');
@@ -29,6 +29,24 @@ export default () => {
     link.download = 'distortio.png';
     link.click();
   };
+
+  const startRecording = () => {
+    recorder.start();
+    setStopwatch(0);
+  };
+
+  const stopRecording = () => {
+    recorder.stop();
+    setStopwatch(null);
+  };
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (stopwatch === null) return;
+      if (recorder.state !== 'recording') return;
+      setStopwatch(stopwatch + 1);
+    }, 1000);
+  }, [stopwatch]);
 
   return (
     <div className="app">
@@ -42,9 +60,9 @@ export default () => {
         <h2>Controls</h2>
         <div><button type="button" onClick={download}>Download image</button></div>
         <div>
-          {recording
-            ? (<button type="button" onClick={() => { recorder.stop(); setRecording(false); }}>Stop recording</button>)
-            : (<button type="button" onClick={() => { recorder.start(); setRecording(true); }}>Start recording</button>)}
+          {stopwatch === null
+            ? (<button type="button" onClick={startRecording}>Start recording</button>)
+            : (<button type="button" onClick={stopRecording}>Stop recording ({stopwatch}s)</button>)}
         </div>
       </div>
     </div>
