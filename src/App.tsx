@@ -79,8 +79,6 @@ recorder.addEventListener('dataavailable', (evt) => {
 });
 
 let paused = false;
-let wheelX = 0;
-let wheelY = 0;
 
 export default () => {
   const root = useRef<HTMLDivElement>(null);
@@ -89,6 +87,9 @@ export default () => {
   const [stopwatch, setStopwatch] = useState<number>(null);
   const [mouseX, setMouseX] = useState<number>(0);
   const [mouseY, setMouseY] = useState<number>(0);
+  const [wheelX, setWheelX] = useState<number>(0);
+  const [wheelY, setWheelY] = useState<number>(0);
+  const [manual, setManual] = useState<boolean>(false);
 
   const download = () => {
     const link = document.createElement('a');
@@ -107,14 +108,6 @@ export default () => {
 
   useEffect(() => {
     root.current.append(canvas);
-    document.addEventListener('mousemove', (evt) => {
-      setMouseX(-1 + 2 * evt.pageX / window.innerWidth);
-      setMouseY(1 - 2 * evt.pageY / window.innerHeight);
-    });
-    document.addEventListener('wheel', (evt) => {
-      wheelX += evt.deltaX;
-      wheelY += evt.deltaY;
-    });
   }, []);
   useEffect(() => {
     setTimeout(() => {
@@ -172,6 +165,16 @@ export default () => {
       if (evt.key.toLowerCase() === 'r' && recorder.state === 'inactive') startRecording();
       if (evt.key.toLowerCase() === 's' && recorder.state === 'recording') stopRecording();
     };
+    document.onmousemove = (evt) => {
+      if (manual) return;
+      setMouseX(-1 + 2 * evt.pageX / window.innerWidth);
+      setMouseY(1 - 2 * evt.pageY / window.innerHeight);
+    };
+    document.onwheel = (evt) => {
+      if (manual) return;
+      setWheelX(wheelX + evt.deltaX);
+      setWheelY(wheelY + evt.deltaY);
+    };
   });
 
   return (
@@ -190,6 +193,44 @@ export default () => {
             ? (<button type="button" onClick={startRecording}>Start recording [R]</button>)
             : (<button type="button" onClick={stopRecording}>Stop recording ({stopwatch}s) [S]</button>)}
         </div>
+        <div><label><input type="checkbox" checked={manual} onChange={(evt) => setManual(evt.target.checked)} /> Manual controls</label></div>
+        {manual && (
+          <>
+            <div>
+              <input
+                type="range"
+                value={mouseX}
+                onChange={(evt) => setMouseX(+evt.target.value)}
+                min="-1"
+                max="1"
+                step="0.01"
+              />
+              {mouseX.toFixed(2)} Horizontal shift
+            </div>
+            <div>
+              <input
+                type="range"
+                value={mouseY}
+                onChange={(evt) => setMouseY(+evt.target.value)}
+                min="-1"
+                max="1"
+                step="0.01"
+              />
+              {mouseY.toFixed(2)} Vertical shift
+            </div>
+            <div>
+              <input
+                type="range"
+                value={~~(Math.log(wheelY))}
+                onChange={(evt) => setWheelY(Math.exp(+evt.target.value))}
+                min="0"
+                max="20"
+                step="0.01"
+              />
+              {wheelY} Force
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
