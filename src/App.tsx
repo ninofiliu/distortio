@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MediaInput from './MediaInput';
-import { Input, Source } from './types';
-import state from './state';
+import { Input, Source, State } from './types';
 import fragment from './fragment.glsl';
 import vertex from './vertex.glsl';
 
@@ -71,15 +70,10 @@ addTexture(gl, 0, gl.getUniformLocation(program, 'src_img'));
 addTexture(gl, 1, gl.getUniformLocation(program, 'dst_img'));
 gl.uniform2f(gl.getUniformLocation(program, 'size'), width, height);
 
-const loop = () => {
-  if (state.src.source && state.src.source instanceof HTMLVideoElement) setTextureImage(gl, 0, state.src.source);
-  if (state.dst.source && state.dst.source instanceof HTMLVideoElement) setTextureImage(gl, 1, state.dst.source);
-  gl.uniform2f(gl.getUniformLocation(program, 'mouse'), state.mouse.x, state.mouse.y);
-  gl.uniform2f(gl.getUniformLocation(program, 'wheel'), state.wheel.x, state.wheel.y);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
-  requestAnimationFrame(loop);
+const state: State = {
+  mouse: { x: 0, y: 0 },
+  wheel: { x: 0, y: 0 },
 };
-loop();
 
 document.addEventListener('mousemove', (evt) => {
   state.mouse.x = -1 + 2 * evt.pageX / window.innerWidth;
@@ -98,6 +92,8 @@ recorder.addEventListener('dataavailable', (evt) => {
   link.download = 'distortio.png';
   link.click();
 });
+
+let paused = false;
 
 export default () => {
   const root = useRef<HTMLDivElement>(null);
@@ -131,33 +127,48 @@ export default () => {
     root.current.append(canvas);
   }, []);
   useEffect(() => {
-    state.src.source = srcInput.source;
-    if (state.src.source instanceof HTMLImageElement) {
-      setTextureImage(gl, 0, state.src.source);
-      gl.uniform2f(gl.getUniformLocation(program, 'src_size'), state.src.source.width, state.src.source.height);
+    if (srcInput.source instanceof HTMLImageElement) {
+      setTextureImage(gl, 0, srcInput.source);
+      gl.uniform2f(gl.getUniformLocation(program, 'src_size'), srcInput.source.width, srcInput.source.height);
     }
-    if (state.src.source instanceof HTMLVideoElement) {
-      gl.uniform2f(gl.getUniformLocation(program, 'src_size'), state.src.source.videoWidth, state.src.source.videoHeight);
+    if (srcInput.source instanceof HTMLVideoElement) {
+      gl.uniform2f(gl.getUniformLocation(program, 'src_size'), srcInput.source.videoWidth, srcInput.source.videoHeight);
     }
   }, [srcInput.source]);
   useEffect(() => {
-    state.dst.source = dstInput.source;
-    if (state.dst.source instanceof HTMLImageElement) {
-      setTextureImage(gl, 1, state.dst.source);
-      gl.uniform2f(gl.getUniformLocation(program, 'dst_size'), state.dst.source.width, state.dst.source.height);
+    if (dstInput.source instanceof HTMLImageElement) {
+      setTextureImage(gl, 1, dstInput.source);
+      gl.uniform2f(gl.getUniformLocation(program, 'dst_size'), dstInput.source.width, dstInput.source.height);
     }
-    if (state.dst.source instanceof HTMLVideoElement) {
-      gl.uniform2f(gl.getUniformLocation(program, 'dst_size'), state.dst.source.videoWidth, state.dst.source.videoHeight);
+    if (dstInput.source instanceof HTMLVideoElement) {
+      gl.uniform2f(gl.getUniformLocation(program, 'dst_size'), dstInput.source.videoWidth, dstInput.source.videoHeight);
     }
   }, [dstInput.source]);
   useEffect(() => {
-    state.src.cover = srcInput.cover;
-    gl.uniform1i(gl.getUniformLocation(program, 'src_cover'), state.src.cover ? 1 : 0);
+    gl.uniform1i(gl.getUniformLocation(program, 'src_cover'), srcInput.cover ? 1 : 0);
   }, [srcInput.cover]);
   useEffect(() => {
-    state.dst.cover = dstInput.cover;
-    gl.uniform1i(gl.getUniformLocation(program, 'dst_cover'), state.dst.cover ? 1 : 0);
+    gl.uniform1i(gl.getUniformLocation(program, 'dst_cover'), dstInput.cover ? 1 : 0);
   }, [dstInput.cover]);
+
+  useEffect(() => {
+    paused = true;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        paused = false;
+        const loop = () => {
+          if (paused) return;
+          if (srcInput.source && srcInput.source instanceof HTMLVideoElement) setTextureImage(gl, 0, srcInput.source);
+          if (dstInput.source && dstInput.source instanceof HTMLVideoElement) setTextureImage(gl, 1, dstInput.source);
+          gl.uniform2f(gl.getUniformLocation(program, 'mouse'), state.mouse.x, state.mouse.y);
+          gl.uniform2f(gl.getUniformLocation(program, 'wheel'), state.wheel.x, state.wheel.y);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          requestAnimationFrame(loop);
+        };
+        loop();
+      });
+    });
+  });
 
   return (
     <div className="app">
