@@ -23,12 +23,16 @@ export default ({ input, setInput }: { input: Input; setInput: Dispatch<SetState
   };
 
   const capture = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    setMedia({ kind: 'stream' });
-    streamVideo.current.srcObject = stream;
-    streamVideo.current.oncanplay = () => {
-      setInput({ ...input, source: streamVideo.current });
-    };
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setMedia({ kind: 'stream' });
+      streamVideo.current.srcObject = stream;
+      streamVideo.current.oncanplay = () => {
+        setInput({ ...input, source: streamVideo.current });
+      };
+    } catch (e) {
+      alert('Failed to capture webcam stream, try uploading a file instead or use another browser');
+    }
   };
 
   return (
@@ -51,6 +55,7 @@ export default ({ input, setInput }: { input: Input; setInput: Dispatch<SetState
         </label>
       </div>
       <div>Webcam: <button onClick={capture} type="button">Capture</button></div>
+      <br />
       <div>
         <button
           type="button"

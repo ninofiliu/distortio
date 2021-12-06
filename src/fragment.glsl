@@ -8,16 +8,12 @@ uniform sampler2D dst_img;
 uniform int dst_cover;
 uniform vec2 dst_size;
 uniform vec2 mouse;
-uniform vec2 wheel;
+uniform float force;
 uniform float time;
 in vec2 v_position;
 out vec4 color;
-
-const float force = 2.0;
   
 void main() {
-  float force = 0.0001 * wheel.y;
-
   vec2 dst_pointer = vec2(v_position.x, -v_position.y);
   float dst_ratio = (dst_size.x / dst_size.y) / (size.x / size.y);
   if (dst_cover == 1) {
@@ -42,7 +38,8 @@ void main() {
     }
   }
   src_pointer = 0.5 + 0.5 * src_pointer;
-  src_pointer = mod(src_pointer + force * offset, 1.0);
+  float e_force = -log2(1.0-force);
+  src_pointer = mod(src_pointer + e_force * offset, 1.0);
 
   color = texture(src_img, src_pointer);
 }

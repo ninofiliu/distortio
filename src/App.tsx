@@ -87,9 +87,9 @@ export default () => {
   const [stopwatch, setStopwatch] = useState<number>(null);
   const [mouseX, setMouseX] = useState<number>(0);
   const [mouseY, setMouseY] = useState<number>(0);
-  const [wheelX, setWheelX] = useState<number>(0);
-  const [wheelY, setWheelY] = useState<number>(0);
-  const [manual, setManual] = useState<boolean>(false);
+  const [manual, setManual] = useState<boolean>(width < 800);
+  const [minimized, setMinimized] = useState<boolean>(false);
+  const [force, setForce] = useState<number>(0.5);
 
   const download = () => {
     const link = document.createElement('a');
@@ -151,7 +151,7 @@ export default () => {
           if (srcInput.source && srcInput.source instanceof HTMLVideoElement) setTextureImage(gl, 0, srcInput.source);
           if (dstInput.source && dstInput.source instanceof HTMLVideoElement) setTextureImage(gl, 1, dstInput.source);
           gl.uniform2f(gl.getUniformLocation(program, 'mouse'), mouseX, mouseY);
-          gl.uniform2f(gl.getUniformLocation(program, 'wheel'), wheelX, wheelY);
+          gl.uniform1f(gl.getUniformLocation(program, 'force'), force);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
           requestAnimationFrame(loop);
         };
@@ -161,76 +161,95 @@ export default () => {
   });
   useEffect(() => {
     document.onkeydown = (evt) => {
-      if (evt.key.toLowerCase() === 'd') download();
-      if (evt.key.toLowerCase() === 'r' && recorder.state === 'inactive') startRecording();
-      if (evt.key.toLowerCase() === 's' && recorder.state === 'recording') stopRecording();
+      switch (evt.key.toLowerCase()) {
+        case 'd':
+          download();
+          break;
+        case 'r':
+          if (recorder.state === 'inactive')startRecording();
+          break;
+        case 's':
+          if (recorder.state === 'recording')stopRecording();
+          break;
+        case 'e':
+          setMinimized(false);
+          break;
+        case 'm':
+          setMinimized(true);
+          break;
+      }
     };
     document.onmousemove = (evt) => {
       if (manual) return;
-      setMouseX(-1 + 2 * evt.pageX / window.innerWidth);
-      setMouseY(1 - 2 * evt.pageY / window.innerHeight);
-    };
-    document.onwheel = (evt) => {
-      if (manual) return;
-      setWheelX(wheelX + evt.deltaX);
-      setWheelY(wheelY + evt.deltaY);
+      if (evt.shiftKey) {
+        setForce(evt.pageX / window.innerWidth);
+      } else {
+        setMouseX(-1 + 2 * evt.pageX / window.innerWidth);
+        setMouseY(1 - 2 * evt.pageY / window.innerHeight);
+      }
     };
   });
 
   return (
     <div className="app">
       <div ref={root} />
-      <div className="input">
-        <h1>Distortio</h1>
-        <h2>I want this...</h2>
-        <MediaInput input={srcInput} setInput={setSrcInput} />
-        <h2>to be distorted by this...</h2>
-        <MediaInput input={dstInput} setInput={setDstInput} />
-        <h2>Controls</h2>
-        <div><button type="button" onClick={download}>Download image [D]</button></div>
-        <div>
-          {stopwatch === null
-            ? (<button type="button" onClick={startRecording}>Start recording [R]</button>)
-            : (<button type="button" onClick={stopRecording}>Stop recording ({stopwatch}s) [S]</button>)}
+      <div className="input" style={{ backgroundColor: minimized ? '' : 'rgba(0, 0, 0, 0.3)' }}>
+        <div className="title">
+          <h1>Distortio</h1>
+          {minimized
+            ? <button type="button" onClick={() => setMinimized(false)}>Expand (E)</button>
+            : <button type="button" onClick={() => setMinimized(true)}>Minimize (M)</button>}
         </div>
-        <div><label><input type="checkbox" checked={manual} onChange={(evt) => setManual(evt.target.checked)} /> Manual controls</label></div>
-        {manual && (
-          <>
-            <div>
+        <div style={{ display: minimized ? 'none' : 'block' }}>
+          <h2>I want this...</h2>
+          <MediaInput input={srcInput} setInput={setSrcInput} />
+          <h2>to be distorted by this...</h2>
+          <MediaInput input={dstInput} setInput={setDstInput} />
+          <h2>Controls</h2>
+          <div><button type="button" onClick={download}>Download image [D]</button></div>
+          <div>
+            {stopwatch === null
+              ? (<button type="button" onClick={startRecording}>Start recording [R]</button>)
+              : (<button type="button" onClick={stopRecording}>Stop recording ({stopwatch}s) [S]</button>)}
+          </div>
+          <br />
+          <div><label><input type="checkbox" checked={manual} onChange={(evt) => setManual(evt.target.checked)} /> Manual controls</label></div>
+          <div className={`manual-controls ${manual ? '--manual' : ''}`}>
+            <div className="range-line">
               <input
                 type="range"
                 value={mouseX}
                 onChange={(evt) => setMouseX(+evt.target.value)}
                 min="-1"
                 max="1"
-                step="0.01"
+                step="any"
               />
-              {mouseX.toFixed(2)} Horizontal shift
+              <span>{`${mouseX.toFixed(2)} Horizontal shift ${manual ? '' : '[bound to mouse X]'}`}</span>
             </div>
-            <div>
+            <div className="range-line">
               <input
                 type="range"
                 value={mouseY}
                 onChange={(evt) => setMouseY(+evt.target.value)}
                 min="-1"
                 max="1"
-                step="0.01"
+                step="any"
               />
-              {mouseY.toFixed(2)} Vertical shift
+              <span>{`${mouseY.toFixed(2)} Vertical shift ${manual ? '' : '[bound to mouse Y]'}`}</span>
             </div>
-            <div>
+            <div className="range-line">
               <input
                 type="range"
-                value={~~(Math.log(wheelY))}
-                onChange={(evt) => setWheelY(Math.exp(+evt.target.value))}
+                value={force}
+                onChange={(evt) => setForce(+evt.target.value)}
                 min="0"
-                max="20"
-                step="0.01"
+                max="1"
+                step="any"
               />
-              {wheelY} Force
+              <span>{`${force.toFixed(2)} Force ${manual ? '' : '[bound to shift + mouse X]'}`}</span>
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );
