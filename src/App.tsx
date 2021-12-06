@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MediaInput from './MediaInput';
-import { Input, Source, State } from './types';
+import { Input, Source } from './types';
 import fragment from './fragment.glsl';
 import vertex from './vertex.glsl';
 
@@ -70,21 +70,6 @@ addTexture(gl, 0, gl.getUniformLocation(program, 'src_img'));
 addTexture(gl, 1, gl.getUniformLocation(program, 'dst_img'));
 gl.uniform2f(gl.getUniformLocation(program, 'size'), width, height);
 
-const state: State = {
-  mouse: { x: 0, y: 0 },
-  wheel: { x: 0, y: 0 },
-};
-
-document.addEventListener('mousemove', (evt) => {
-  state.mouse.x = -1 + 2 * evt.pageX / window.innerWidth;
-  state.mouse.y = 1 - 2 * evt.pageY / window.innerHeight;
-});
-
-document.addEventListener('wheel', (evt) => {
-  state.wheel.x += evt.deltaX;
-  state.wheel.y += evt.deltaY;
-});
-
 const recorder = new MediaRecorder(canvas.captureStream());
 recorder.addEventListener('dataavailable', (evt) => {
   const link = document.createElement('a');
@@ -94,12 +79,16 @@ recorder.addEventListener('dataavailable', (evt) => {
 });
 
 let paused = false;
+let wheelX = 0;
+let wheelY = 0;
 
 export default () => {
   const root = useRef<HTMLDivElement>(null);
   const [srcInput, setSrcInput] = useState<Input>({ cover: true, source: null });
   const [dstInput, setDstInput] = useState<Input>({ cover: true, source: null });
   const [stopwatch, setStopwatch] = useState<number>(null);
+  const [mouseX, setMouseX] = useState<number>(0);
+  const [mouseY, setMouseY] = useState<number>(0);
 
   const download = () => {
     const link = document.createElement('a');
@@ -117,15 +106,23 @@ export default () => {
   };
 
   useEffect(() => {
+    root.current.append(canvas);
+    document.addEventListener('mousemove', (evt) => {
+      setMouseX(-1 + 2 * evt.pageX / window.innerWidth);
+      setMouseY(1 - 2 * evt.pageY / window.innerHeight);
+    });
+    document.addEventListener('wheel', (evt) => {
+      wheelX += evt.deltaX;
+      wheelY += evt.deltaY;
+    });
+  }, []);
+  useEffect(() => {
     setTimeout(() => {
       if (stopwatch === null) return;
       if (recorder.state !== 'recording') return;
       setStopwatch(stopwatch + 1);
     }, 1000);
   }, [stopwatch]);
-  useEffect(() => {
-    root.current.append(canvas);
-  }, []);
   useEffect(() => {
     if (srcInput.source instanceof HTMLImageElement) {
       setTextureImage(gl, 0, srcInput.source);
@@ -160,8 +157,8 @@ export default () => {
           if (paused) return;
           if (srcInput.source && srcInput.source instanceof HTMLVideoElement) setTextureImage(gl, 0, srcInput.source);
           if (dstInput.source && dstInput.source instanceof HTMLVideoElement) setTextureImage(gl, 1, dstInput.source);
-          gl.uniform2f(gl.getUniformLocation(program, 'mouse'), state.mouse.x, state.mouse.y);
-          gl.uniform2f(gl.getUniformLocation(program, 'wheel'), state.wheel.x, state.wheel.y);
+          gl.uniform2f(gl.getUniformLocation(program, 'mouse'), mouseX, mouseY);
+          gl.uniform2f(gl.getUniformLocation(program, 'wheel'), wheelX, wheelY);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
           requestAnimationFrame(loop);
         };
