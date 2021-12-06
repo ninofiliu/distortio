@@ -70,11 +70,11 @@ addTexture(gl, 0, gl.getUniformLocation(program, 'src_img'));
 addTexture(gl, 1, gl.getUniformLocation(program, 'dst_img'));
 gl.uniform2f(gl.getUniformLocation(program, 'size'), width, height);
 
-const recorder = new MediaRecorder(canvas.captureStream());
+const recorder = new MediaRecorder(canvas.captureStream(), { mimeType: 'video/webm' });
 recorder.addEventListener('dataavailable', (evt) => {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(evt.data);
-  link.download = 'distortio.png';
+  link.download = 'distortio.webm';
   link.click();
 });
 
@@ -166,6 +166,13 @@ export default () => {
       });
     });
   });
+  useEffect(() => {
+    document.onkeydown = (evt) => {
+      if (evt.key.toLowerCase() === 'd') download();
+      if (evt.key.toLowerCase() === 'r' && recorder.state === 'inactive') startRecording();
+      if (evt.key.toLowerCase() === 's' && recorder.state === 'recording') stopRecording();
+    };
+  });
 
   return (
     <div className="app">
@@ -177,11 +184,11 @@ export default () => {
         <h2>to be distorted by this...</h2>
         <MediaInput input={dstInput} setInput={setDstInput} />
         <h2>Controls</h2>
-        <div><button type="button" onClick={download}>Download image</button></div>
+        <div><button type="button" onClick={download}>Download image [D]</button></div>
         <div>
           {stopwatch === null
-            ? (<button type="button" onClick={startRecording}>Start recording</button>)
-            : (<button type="button" onClick={stopRecording}>Stop recording ({stopwatch}s)</button>)}
+            ? (<button type="button" onClick={startRecording}>Start recording [R]</button>)
+            : (<button type="button" onClick={stopRecording}>Stop recording ({stopwatch}s) [S]</button>)}
         </div>
       </div>
     </div>
